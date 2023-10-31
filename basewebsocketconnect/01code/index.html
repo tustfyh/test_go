@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <input type="text" id="userInput" placeholder="输入你的内容" style="display: none;">
+    <button id="userbutton" style="display: none;">发送</button>
+    <div id="register">
+        <h3>输入用户名</h3>
+        <input type="text" id="username" placeholder="输入用户名...">
+        <button id="registerbutton">登入</button>
+    </div>
+    <div id="chat"></div> <!-- 添加一个唯一的ID -->
+    <script>
+        var input=document.querySelector('input')
+        var div=document.querySelector('div')
+        var userbutton = document.getElementById('userbutton')
+        var registerbutton = document.getElementById('registerbutton')
+        var chatDiv = document.getElementById('chat') // 使用新的ID来选择div
+        const TYPEENTER=0
+        const TYPELEAVE=1
+        const TYPEMSG =2
+        const TYPEREGISTER=3
+        const TYPESENDMSG=4
+        //1.创建一个websocket
+        //参数：服务地址
+        let ws=new WebSocket('ws://127.0.0.1:9000')
+        ws.addEventListener('open',function(){
+
+        })
+        //注册函数
+        registerbutton.addEventListener('click', function(){
+            var username = document.getElementById('username').value
+            var data={
+                type:TYPEREGISTER,
+                name:username
+            }
+            ws.send(JSON.stringify(data))
+            document.getElementById('username').value = '';  // Clear the input box.
+        })
+        //主动给服务端发消息
+        userbutton.addEventListener('click',function(){
+            var value=input.value
+            var data={
+                type:TYPESENDMSG,
+                connext:value
+            }
+            ws.send(JSON.stringify(data))
+            input.value=''
+        })
+        //接受服务端返回的消息
+        ws.addEventListener('message',function(resmes){
+            var data=JSON.parse(resmes.data)
+            if(data.type===TYPEREGISTER){
+                if (data.msg===200){
+                    if(data.name===''){
+                        alert('请输入用户名！')
+                    }else{
+                        // 隐藏注册框，显示聊天框
+                        document.getElementById('register').style.display = 'none'
+                        document.getElementById('userInput').style.display = 'block'
+                        document.getElementById('userbutton').style.display = 'block'
+                    }
+                }else if(data.msg===404){
+                    if(data.name===''){
+                        alert('请输入用户名！')
+                    }else{
+                        alert('用户名已存在！')
+                    }
+                }
+            }else{
+                var dv=document.createElement('div')
+                dv.innerText=data.msg+'----'+data.time
+                if (data.type===TYPEENTER){
+                    dv.style.color='green'
+                }else if(data.type===TYPEMSG){
+                    dv.style.color='black'
+                }else if(data.type===TYPELEAVE){
+                    dv.style.color='red'
+                }
+                chatDiv.appendChild(dv) // 将新元素添加到chatDiv而不是div
+            }
+        })
+    </script>
+</body>
+</html>
